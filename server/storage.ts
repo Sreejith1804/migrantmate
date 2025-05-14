@@ -58,6 +58,14 @@ export interface IStorage {
   
   // Application methods
   createApplication(application: { jobId: number, workerId: number }): Promise<Application>;
+  getApplication(id: number): Promise<Application | undefined>;
+  updateApplication(id: number, data: Partial<{
+    status: string;
+    resume: string;
+    coverLetter: string;
+    employerNotes: string;
+    requestedDocuments: string;
+  }>): Promise<Application | undefined>;
   getApplicationsByWorkerId(workerId: number): Promise<(Application & { job: Job })[]>;
   getApplicationsByEmployerId(employerId: number): Promise<(Application & { job: Job })[]>;
   
@@ -174,6 +182,39 @@ export class DatabaseStorage implements IStorage {
   async createApplication(applicationData: { jobId: number, workerId: number }): Promise<Application> {
     const [application] = await db.insert(applications).values(applicationData).returning();
     return application;
+  }
+  
+  async getApplication(id: number): Promise<Application | undefined> {
+    const [application] = await db.select().from(applications).where(eq(applications.id, id));
+    return application;
+  }
+  
+  async updateApplication(id: number, data: Partial<{
+    status: string;
+    resume: string;
+    coverLetter: string;
+    employerNotes: string;
+    requestedDocuments: string;
+  }>): Promise<Application | undefined> {
+    // First check if application exists
+    const application = await this.getApplication(id);
+    if (!application) return undefined;
+    
+    // Update the application
+    const updateData: Record<string, any> = {};
+    
+    if (data.status) updateData.status = data.status;
+    if (data.resume !== undefined) updateData.resume = data.resume;
+    if (data.coverLetter !== undefined) updateData.coverLetter = data.coverLetter;
+    if (data.employerNotes !== undefined) updateData.employerNotes = data.employerNotes;
+    if (data.requestedDocuments !== undefined) updateData.requestedDocuments = data.requestedDocuments;
+    
+    const [updatedApplication] = await db.update(applications)
+      .set(updateData)
+      .where(eq(applications.id, id))
+      .returning();
+      
+    return updatedApplication;
   }
 
   async getApplicationsByWorkerId(workerId: number): Promise<(Application & { job: Job })[]> {

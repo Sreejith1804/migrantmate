@@ -48,6 +48,10 @@ export const applications = pgTable("applications", {
   workerId: integer("worker_id").notNull().references(() => users.id),
   status: text("status", { enum: ["pending", "accepted", "rejected"] }).notNull().default("pending"),
   appliedAt: timestamp("applied_at").notNull().defaultNow(),
+  resume: text("resume"),
+  coverLetter: text("cover_letter"),
+  employerNotes: text("employer_notes"),
+  requestedDocuments: text("requested_documents"),
 });
 
 // Base user schema

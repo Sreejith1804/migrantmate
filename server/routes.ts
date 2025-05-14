@@ -124,6 +124,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Application status update
+  app.patch("/api/applications/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return res.status(400).json({ message: "Application ID is required" });
+      }
+      
+      const appId = parseInt(id);
+      const { status, employerNotes, requestedDocuments } = req.body;
+      
+      // Update application
+      const updatedApplication = await storage.updateApplication(appId, {
+        status,
+        employerNotes,
+        requestedDocuments
+      });
+      
+      if (!updatedApplication) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Send notification to worker about status change
+      const job = await storage.getJob(updatedApplication.jobId);
+      
+      if (job && status) {
+        let notificationMessage = "";
+        
+        if (status === "accepted") {
+          notificationMessage = `Your application for "${job.title}" has been accepted`;
+          if (requestedDocuments) {
+            notificationMessage += `. Please provide the following documents: ${requestedDocuments}`;
+          }
+        } else if (status === "rejected") {
+          notificationMessage = `Your application for "${job.title}" has been rejected`;
+        } else if (employerNotes) {
+          notificationMessage = `The employer has added notes to your application for "${job.title}"`;
+        }
+        
+        if (notificationMessage) {
+          await storage.createNotification({
+            userId: updatedApplication.workerId,
+            message: notificationMessage,
+            type: "application_update",
+            isRead: false,
+            relatedId: appId
+          });
+        }
+      }
+      
+      return res.status(200).json(updatedApplication);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Submit additional application details (for worker to respond to employer's request)
+  app.patch("/api/applications/:id/details", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { workerId } = req.query;
+      
+      if (!id) {
+        return res.status(400).json({ message: "Application ID is required" });
+      }
+      
+      if (!workerId || typeof workerId !== 'string') {
+        return res.status(400).json({ message: "Worker ID is required" });
+      }
+      
+      const appId = parseInt(id);
+      const { resume, coverLetter } = req.body;
+      
+      // Get application to verify worker is the owner
+      const application = await storage.getApplication(appId);
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      if (application.workerId !== parseInt(workerId)) {
+        return res.status(403).json({ message: "Not authorized to update this application" });
+      }
+      
+      // Update application
+      const updatedApplication = await storage.updateApplication(appId, {
+        resume,
+        coverLetter
+      });
+      
+      // Notify employer about updated application
+      const job = await storage.getJob(application.jobId);
+      
+      if (job) {
+        await storage.createNotification({
+          userId: job.employerId,
+          message: `A worker has updated their application for "${job.title}" with additional details`,
+          type: "application_details_update",
+          isRead: false,
+          relatedId: appId
+        });
+      }
+      
+      return res.status(200).json(updatedApplication);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Notifications routes
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
