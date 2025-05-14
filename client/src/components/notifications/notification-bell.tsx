@@ -35,7 +35,7 @@ export default function NotificationBell() {
 
   // Get notifications for the user
   const { data: notifications = [], refetch } = useQuery<Notification[]>({
-    queryKey: ["/api/notifications", user?.id],
+    queryKey: [`/api/notifications/${user?.id}`],
     enabled: !!user,
   });
 

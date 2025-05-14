@@ -25,17 +25,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUserName = localStorage.getItem('userName');
     const storedUserRole = localStorage.getItem('userRole');
     const storedUserId = localStorage.getItem('userId');
+    const storedUserEmail = localStorage.getItem('userEmail');
+    const storedUserFullName = localStorage.getItem('userFullName');
     
     if (storedUserName && storedUserRole && storedUserId) {
       setUser({
         id: parseInt(storedUserId),
         username: storedUserName,
         role: storedUserRole as 'worker' | 'employer',
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        password: ''
+        firstName: storedUserFullName?.split(' ')[0] || '',
+        lastName: storedUserFullName?.split(' ')[1] || '',
+        email: storedUserEmail || '',
+        phone: '', // We don't need to store phone in localStorage for security reasons
+        password: '', // We don't store or use password after authentication
       });
     }
     
@@ -53,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userName', userData.username);
       localStorage.setItem('userRole', userData.role);
       localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.firstName}!`,
@@ -78,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userName', userData.username);
       localStorage.setItem('userRole', userData.role);
       localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
       toast({
         title: "Registration successful",
         description: `Welcome, ${userData.firstName}!`,
@@ -103,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userName', userData.username);
       localStorage.setItem('userRole', userData.role);
       localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
       toast({
         title: "Registration successful",
         description: `Welcome, ${userData.firstName}!`,
