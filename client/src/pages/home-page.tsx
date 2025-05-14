@@ -17,6 +17,68 @@ export default function HomePage() {
       <Navbar />
       
       <main className="flex-grow">
+        {/* User Role Display - Only shown when logged in */}
+        {user && (
+          <section className="bg-white py-6 border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Card className="bg-white border shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full bg-primary text-white flex items-center justify-center text-lg font-semibold">
+                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary/10 text-primary capitalize">
+                            {user.role === "worker" ? translate("Worker") : translate("Employer")}
+                          </span>
+                          <span className="text-gray-500 text-sm">{user.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full md:w-auto">
+                      {user.role === "worker" ? (
+                        <>
+                          <Button variant="secondary" className="justify-start" asChild>
+                            <Link href="/worker/search-jobs">
+                              <Search className="h-4 w-4 mr-2" />
+                              {translate("Search Jobs")}
+                            </Link>
+                          </Button>
+                          <Button variant="secondary" className="justify-start" asChild>
+                            <Link href="/worker/my-applications">
+                              <Handshake className="h-4 w-4 mr-2" />
+                              {translate("My Applications")}
+                            </Link>
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="secondary" className="justify-start" asChild>
+                            <Link href="/employer/post-job">
+                              <PersonStanding className="h-4 w-4 mr-2" />
+                              {translate("Post Job")}
+                            </Link>
+                          </Button>
+                          <Button variant="secondary" className="justify-start" asChild>
+                            <Link href="/employer/view-applications">
+                              <Handshake className="h-4 w-4 mr-2" />
+                              {translate("View Applications")}
+                            </Link>
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
         {/* Hero Section */}
         <section className="hero-section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
