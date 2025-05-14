@@ -4,10 +4,13 @@ import {
   employerProfiles, 
   jobs, 
   applications, 
+  notifications,
   type User, 
   type InsertUser,
   type Job,
-  type Application
+  type Application,
+  type Notification,
+  type InsertNotification
 } from "@shared/schema";
 
 // Storage interface
@@ -43,6 +46,7 @@ export interface IStorage {
     location: string, 
     salary: string 
   }): Promise<Job>;
+  getJob(id: number): Promise<Job | undefined>;
   getAllJobs(): Promise<Job[]>;
   getJobsByEmployerId(employerId: number): Promise<Job[]>;
   
@@ -50,6 +54,11 @@ export interface IStorage {
   createApplication(application: { jobId: number, workerId: number }): Promise<Application>;
   getApplicationsByWorkerId(workerId: number): Promise<(Application & { job: Job })[]>;
   getApplicationsByEmployerId(employerId: number): Promise<(Application & { job: Job })[]>;
+  
+  // Notification methods
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationsByUserId(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -63,12 +72,14 @@ export class MemStorage implements IStorage {
   }>;
   private jobs: Map<number, Job>;
   private applications: Map<number, Application>;
+  private notifications: Map<number, Notification>;
   
   private userId = 1;
   private workerProfileId = 1;
   private employerProfileId = 1;
   private jobId = 1;
   private applicationId = 1;
+  private notificationId = 1;
 
   constructor() {
     this.users = new Map();
@@ -76,6 +87,7 @@ export class MemStorage implements IStorage {
     this.employerProfiles = new Map();
     this.jobs = new Map();
     this.applications = new Map();
+    this.notifications = new Map();
   }
 
   // User methods
@@ -91,7 +103,12 @@ export class MemStorage implements IStorage {
 
   async createUser(userData: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...userData, id };
+    // Make sure role is set to a default value if not provided
+    const user: User = { 
+      ...userData, 
+      id,
+      role: userData.role || "worker"  // Default to worker if role is not provided
+    };
     this.users.set(id, user);
     return user;
   }
@@ -144,6 +161,10 @@ export class MemStorage implements IStorage {
     this.jobs.set(id, job);
     return job;
   }
+  
+  async getJob(id: number): Promise<Job | undefined> {
+    return this.jobs.get(id);
+  }
 
   async getAllJobs(): Promise<Job[]> {
     return Array.from(this.jobs.values());
@@ -184,6 +205,29 @@ export class MemStorage implements IStorage {
         const job = this.jobs.get(application.jobId)!;
         return { ...application, job };
       });
+  }
+  
+  // Notification methods
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const id = this.notificationId++;
+    const createdAt = new Date();
+    const notification: Notification = { ...notificationData, id, createdAt };
+    this.notifications.set(id, notification);
+    return notification;
+  }
+  
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by date, newest first
+  }
+  
+  async markNotificationAsRead(id: number): Promise<void> {
+    const notification = this.notifications.get(id);
+    if (notification) {
+      notification.isRead = true;
+      this.notifications.set(id, notification);
+    }
   }
 }
 

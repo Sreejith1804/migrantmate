@@ -98,6 +98,22 @@ export const insertApplicationSchema = createInsertSchema(applications).omit({
   appliedAt: true,
 });
 
+// Notifications schema
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  type: text("type").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  relatedId: integer("related_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type WorkerRegistration = z.infer<typeof workerRegistrationSchema>;
@@ -107,3 +123,5 @@ export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

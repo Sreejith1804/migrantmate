@@ -181,12 +181,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workerId: parseInt(workerId),
       });
       
+      // Get job details for notification
+      const job = await storage.getJob(validatedData.jobId);
+      if (job) {
+        // Create notification for the employer
+        await storage.createNotification({
+          userId: job.employerId,
+          message: `New application received for job: ${job.title}`,
+          type: "job_application",
+          isRead: false,
+          relatedId: application.id
+        });
+        
+        // Also create notification for the worker
+        await storage.createNotification({
+          userId: parseInt(workerId),
+          message: `You have applied for the job: ${job.title}`,
+          type: "application_submitted",
+          isRead: false,
+          relatedId: application.id
+        });
+      }
+      
       return res.status(201).json(application);
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
         return res.status(400).json({ message: validationError.message });
       }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Notifications routes
+  app.get("/api/notifications/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      const notifications = await storage.getNotificationsByUserId(parseInt(userId));
+      return res.status(200).json(notifications);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return res.status(400).json({ message: "Notification ID is required" });
+      }
+      
+      await storage.markNotificationAsRead(parseInt(id));
+      return res.status(200).json({ message: "Notification marked as read" });
+    } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
