@@ -27,16 +27,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null>({
     queryKey: ['/api/user'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
-    onSuccess: (data) => {
-      if (data) {
-        setUser(data);
-      }
-      setIsLoading(false);
-    },
-    onError: () => {
-      setIsLoading(false);
-    }
   });
+  
+  // Update user state when userData changes
+  useEffect(() => {
+    if (userData) {
+      setUser(userData);
+    }
+    setIsLoading(false);
+  }, [userData]);
 
   // Login mutation
   const loginMutation = useMutation({
@@ -46,11 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (userData: User) => {
       setUser(userData);
-      localStorage.setItem('userName', userData.username);
-      localStorage.setItem('userRole', userData.role);
-      localStorage.setItem('userId', userData.id.toString());
-      localStorage.setItem('userEmail', userData.email);
-      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
+      queryClient.setQueryData(['/api/user'], userData);
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.firstName}!`,
@@ -73,11 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (userData: User) => {
       setUser(userData);
-      localStorage.setItem('userName', userData.username);
-      localStorage.setItem('userRole', userData.role);
-      localStorage.setItem('userId', userData.id.toString());
-      localStorage.setItem('userEmail', userData.email);
-      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
+      queryClient.setQueryData(['/api/user'], userData);
       toast({
         title: "Registration successful",
         description: `Welcome, ${userData.firstName}!`,
@@ -100,11 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (userData: User) => {
       setUser(userData);
-      localStorage.setItem('userName', userData.username);
-      localStorage.setItem('userRole', userData.role);
-      localStorage.setItem('userId', userData.id.toString());
-      localStorage.setItem('userEmail', userData.email);
-      localStorage.setItem('userFullName', `${userData.firstName} ${userData.lastName}`);
+      queryClient.setQueryData(['/api/user'], userData);
       toast({
         title: "Registration successful",
         description: `Welcome, ${userData.firstName}!`,
@@ -131,17 +118,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await employerRegistrationMutation.mutateAsync(data);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userFullName');
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    try {
+      await apiRequest("POST", "/api/logout");
+      setUser(null);
+      queryClient.setQueryData(['/api/user'], null);
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
