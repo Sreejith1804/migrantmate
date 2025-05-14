@@ -211,7 +211,14 @@ export class MemStorage implements IStorage {
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
     const id = this.notificationId++;
     const createdAt = new Date();
-    const notification: Notification = { ...notificationData, id, createdAt };
+    // Ensure isRead is always set (default to false) and relatedId is properly handled
+    const notification: Notification = { 
+      ...notificationData, 
+      id, 
+      createdAt,
+      isRead: notificationData.isRead ?? false,
+      relatedId: notificationData.relatedId ?? null
+    };
     this.notifications.set(id, notification);
     return notification;
   }

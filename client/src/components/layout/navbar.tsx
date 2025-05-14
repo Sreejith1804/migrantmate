@@ -13,6 +13,7 @@ import { Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import LanguageToggle from "@/components/language-toggle";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 export default function Navbar() {
   const [location] = useLocation();
@@ -128,6 +129,11 @@ export default function Navbar() {
                   <Link href="/auth">{translate("Register")}</Link>
                 </Button>
               </div>
+            )}
+            
+            {/* Notification Bell for logged in users */}
+            {user && (
+              <NotificationBell />
             )}
             
             {/* User Dropdown for logged in users */}

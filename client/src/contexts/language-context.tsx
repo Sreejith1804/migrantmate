@@ -23,6 +23,12 @@ const translations: Record<string, string> = {
   "Login": "लॉगिन",
   "Register": "रजिस्टर",
   "Logout": "लॉगआउट",
+  
+  // Notifications
+  "Notifications": "सूचनाएँ",
+  "No notifications yet": "अभी कोई सूचना नहीं",
+  "Mark all as read": "सभी को पढ़ा हुआ मार्क करें",
+  "new": "नया",
 
   // Auth
   "Worker": "श्रमिक",
@@ -87,7 +93,6 @@ const translations: Record<string, string> = {
   "Job Description": "कार्य विवरण",
   "Location": "स्थान",
   "Salary": "वेतन",
-  "Post Job": "नौकरी पोस्ट करें",
   "Job Applications": "नौकरी आवेदन",
   "Applicant": "आवेदक",
   "Action": "कार्रवाई",
