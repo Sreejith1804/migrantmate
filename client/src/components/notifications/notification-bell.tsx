@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 type Notification = {
@@ -31,6 +32,7 @@ type Notification = {
 export default function NotificationBell() {
   const { user } = useAuth();
   const { translate } = useLanguage();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
   // Get notifications for the user
@@ -55,6 +57,12 @@ export default function NotificationBell() {
       refetch();
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
+      // Show a toast error message to the user
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

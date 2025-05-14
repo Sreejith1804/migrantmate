@@ -142,6 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userName');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userFullName');
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
