@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { User, Login, WorkerRegistration, EmployerRegistration } from "@shared/schema";
-import { apiRequest } from "../lib/queryClient";
+import { apiRequest, getQueryFn, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -10,7 +10,7 @@ type AuthContextType = {
   login: (data: Login) => Promise<void>;
   registerWorker: (data: WorkerRegistration) => Promise<void>;
   registerEmployer: (data: EmployerRegistration) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,29 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on initial render
-  useEffect(() => {
-    const storedUserName = localStorage.getItem('userName');
-    const storedUserRole = localStorage.getItem('userRole');
-    const storedUserId = localStorage.getItem('userId');
-    const storedUserEmail = localStorage.getItem('userEmail');
-    const storedUserFullName = localStorage.getItem('userFullName');
-    
-    if (storedUserName && storedUserRole && storedUserId) {
-      setUser({
-        id: parseInt(storedUserId),
-        username: storedUserName,
-        role: storedUserRole as 'worker' | 'employer',
-        firstName: storedUserFullName?.split(' ')[0] || '',
-        lastName: storedUserFullName?.split(' ')[1] || '',
-        email: storedUserEmail || '',
-        phone: '', // We don't need to store phone in localStorage for security reasons
-        password: '', // We don't store or use password after authentication
-      });
+  // Load user from API on initial render
+  const { 
+    data: userData, 
+    isLoading: isLoadingUser 
+  } = useQuery<User | null>({
+    queryKey: ['/api/user'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+    onSuccess: (data) => {
+      if (data) {
+        setUser(data);
+      }
+      setIsLoading(false);
+    },
+    onError: () => {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
-  }, []);
+  });
 
   // Login mutation
   const loginMutation = useMutation({
