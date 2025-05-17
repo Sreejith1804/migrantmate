@@ -3,15 +3,20 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { insertJobSchema, InsertJob } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +33,9 @@ const formSchema = insertJobSchema.extend({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   location: z.string().min(2, "Location is required"),
-  salary: z.string().min(1, "Salary information is required"),
+  salary: z.string().min(1, "Salary is required"),
+  jobType: z.string().min(1, "Job Type is required"),
+  jobSubtype: z.string().min(1, "Job Subtype is required"),
 });
 
 export default function PostJob() {
@@ -43,6 +50,8 @@ export default function PostJob() {
       description: "",
       location: "",
       salary: "",
+      jobType: "",
+      jobSubtype: "",
     },
   });
 
@@ -58,7 +67,6 @@ export default function PostJob() {
         description: "Your job has been successfully posted.",
       });
       form.reset();
-      // Invalidate jobs cache if needed
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
     },
     onError: (error: Error) => {
@@ -77,7 +85,6 @@ export default function PostJob() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
       <main className="flex-grow py-8 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card>
@@ -99,13 +106,12 @@ export default function PostJob() {
                       <FormItem>
                         <FormLabel>{translate("Job Title")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Construction Worker" {...field} />
+                          <Input placeholder="e.g., Painter" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
                   <FormField
                     control={form.control}
                     name="description"
@@ -113,18 +119,17 @@ export default function PostJob() {
                       <FormItem>
                         <FormLabel>{translate("Job Description")}</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Describe the job responsibilities, requirements, and other details..." 
-                            className="min-h-[150px]" 
-                            {...field} 
+                          <Textarea
+                            placeholder="Describe the job in detail"
+                            className="min-h-[150px]"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="location"
@@ -132,13 +137,12 @@ export default function PostJob() {
                         <FormItem>
                           <FormLabel>{translate("Location")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Delhi, India" {...field} />
+                            <Input placeholder="e.g., Chennai" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <FormField
                       control={form.control}
                       name="salary"
@@ -146,22 +150,60 @@ export default function PostJob() {
                         <FormItem>
                           <FormLabel>{translate("Salary")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., ₹15,000 - ₹20,000 per month" {...field} />
+                            <Input placeholder="e.g., ₹15,000 - ₹20,000" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={jobMutation.isPending}
-                  >
+
+                  <FormField
+                    control={form.control}
+                    name="jobType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{translate("Job Type")}</FormLabel>
+                        <FormControl>
+                          <select {...field} className="w-full border px-2 py-2 rounded">
+                            <option value="">Select job type</option>
+                            <option value="Construction">Construction</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Textile">Textile</option>
+                            <option value="Service">Service</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="jobSubtype"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{translate("Job Subtype")}</FormLabel>
+                        <FormControl>
+                          <select {...field} className="w-full border px-2 py-2 rounded">
+                            <option value="">Select job subtype</option>
+                            <option value="Mason">Mason</option>
+                            <option value="Carpenter">Carpenter</option>
+                            <option value="Painter">Painter</option>
+                            <option value="Electrician">Electrician</option>
+                            <option value="Plumber">Plumber</option>
+                            <option value="General Helper">General Helper</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" className="w-full" disabled={jobMutation.isPending}>
                     {jobMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         {translate("Posting...")}
                       </>
                     ) : (
@@ -174,7 +216,6 @@ export default function PostJob() {
           </Card>
         </div>
       </main>
-      
       <Footer />
     </div>
   );

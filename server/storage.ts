@@ -170,9 +170,32 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async getAllJobs(): Promise<Job[]> {
-    return await db.select().from(jobs);
+ async getAllJobs(): Promise<(Job & {
+  employerName: string;
+  companyName: string;
+  designation: string;
+  industry: string;
+})[]> {
+  const jobsList = await db.select().from(jobs);
+
+  const enrichedJobs = [];
+
+  for (const job of jobsList) {
+    const [user] = await db.select().from(users).where(eq(users.id, job.employerId));
+    const [profile] = await db.select().from(employerProfiles).where(eq(employerProfiles.userId, job.employerId));
+
+    enrichedJobs.push({
+      ...job,
+      employerName: user?.username ?? "Unknown",
+      companyName: profile?.companyName ?? "Unknown",
+      designation: profile?.designation ?? "Unknown",
+      industry: profile?.industry ?? "Unknown",
+    });
   }
+
+  return enrichedJobs;
+}
+
 
   async getJobsByEmployerId(employerId: number): Promise<Job[]> {
     return await db.select().from(jobs).where(eq(jobs.employerId, employerId));
@@ -234,26 +257,53 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getApplicationsByEmployerId(employerId: number): Promise<(Application & { job: Job })[]> {
-    // Get all jobs by this employer
-    const employerJobs = await this.getJobsByEmployerId(employerId);
-    const jobIds = employerJobs.map(job => job.id);
-    
-    const result = [];
-    for (const jobId of jobIds) {
-      const jobApplications = await db.select().from(applications)
-        .where(eq(applications.jobId, jobId));
-      
-      for (const app of jobApplications) {
-        const job = employerJobs.find(j => j.id === jobId);
-        if (job) {
-          result.push({...app, job});
-        }
-      }
+  async getApplicationsByEmployerId(employerId: number): Promise<
+  (Application & {
+    job: Job;
+    worker: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      phone: string;
+      email: string;
+      skills: string;
+    };
+  })[]
+> {
+  const employerJobs = await this.getJobsByEmployerId(employerId);
+  const jobIds = employerJobs.map((job) => job.id);
+
+  const result = [];
+
+  for (const jobId of jobIds) {
+    const jobApplications = await db.select().from(applications)
+      .where(eq(applications.jobId, jobId));
+
+    for (const app of jobApplications) {
+      const job = employerJobs.find(j => j.id === jobId);
+      if (!job) continue;
+
+      const [user] = await db.select().from(users).where(eq(users.id, app.workerId));
+      const [profile] = await db.select().from(workerProfiles).where(eq(workerProfiles.userId, app.workerId));
+
+      result.push({
+        ...app,
+        job,
+        worker: {
+          id: user?.id ?? 0,
+          firstName: user?.firstName ?? "N/A",
+          lastName: user?.lastName ?? "",
+          phone: user?.phone ?? "N/A",
+          email: user?.email ?? "N/A",
+          skills: profile?.skills ?? "",
+        },
+      });
     }
-    
-    return result;
   }
+
+  return result;
+}
+
 
   // Notification methods
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
